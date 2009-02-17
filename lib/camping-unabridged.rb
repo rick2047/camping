@@ -602,17 +602,35 @@ module Camping
     end
   end
   
-  # TODO: More examples.
+
   # Views is an empty module for storing methods which create HTML.  The HTML is described
   # using the Markaby language.
+  # == Using View module
+  # You just have to fill in the Camping::Views module with functions with markaby code in it.
+  # And call them with render function in you controllers.
+  # For example for a View to show the current time in the browser you will define:
+  # modules Camping::Views
+  # 	def timenow
+  # 		html do
+  # 			head do
+  # 				title 'Time Now'
+  # 			end
   #
+  # 			body do
+  # 				text "#{Time.now}"
+  # 			end
+  # 		end
+  # 	end
+  # end
+  # and you can call them in your controller by putting
+  # +render :timenow+
+  # at the end of your function.
   # == Using the layout method
   #
   # If your Views module has a <tt>layout</tt> method defined, it will be called with a block
   # which will insert content from your view.
   module Views; include X, Helpers end
   
-  # TODO: Migrations
   # Models is an empty Ruby module for housing model classes derived
   # from ActiveRecord::Base.  As a shortcut, you may derive from Base
   # which is an alias for ActiveRecord::Base.
@@ -636,7 +654,25 @@ module Camping
   #       end
   #     end
   #   end
+  # 
+  # == Migrations
+  # Good news is that we can add good old migraitions to your models, thats right activerecord style.
+  # You just have to make a class named after you migration (Good class names help you make sense of the migration later on). That class should inherit from a meta class +V+ followed by its version number.
   #
+  # module Camping::Models
+  # 	class CreateAuthenticationProfile < V 1
+  # 		def self.up
+  # 			create_table :auth, do |t|
+  # 				t.string :user_id, :password
+  # 				t.timestamps
+  # 			end
+  # 		end
+  # 		def self.down
+  # 			drop_table :auth
+  # 		end
+  # 	end
+  # end
+  # 
   # Models cannot be referred to in Views at this time.
   module Models
       autoload :Base,'camping/ar'
