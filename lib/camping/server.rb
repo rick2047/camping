@@ -1,25 +1,34 @@
+# == About Camping::Server
+# It is the tiny server for hosting tiny camping apps. It uses rack to do all the heavy lifting and serves camping apps on +WEBrick+ ,+Mongrel+ and an +irb+ consol.
+# For an example of usage see the camping startup script.
 require 'irb'
 require 'rack'
 require 'camping/reloader'
 
-# TODO: I guess we should documentate this too...
+# 
+# Base class for camping server.
+#
 class Camping::Server
   attr_reader :reloader
   attr_accessor :conf
-
+# 
+# Makes a new Camping::Server object (kinda goes without saying doesn't it??). Excepts two arguments
+  # * +conf+ configuration information from the file supplied. (The startup script reads them from ~/.campingrc). It is actually an Hash.
+  # * +paths+ paths for server,port number and localhost
   def initialize(conf, paths)
     @conf = conf
     @paths = paths
     @reloader = Camping::Reloader.new
     connect(@conf.database) if @conf.database
   end
-  
+ # 
+  # Connects to the database configuration hash provided in +db+ 
   def connect(db)
     unless Camping.autoload?(:Models)
       Camping::Models::Base.establish_connection(db)
     end
   end
-  
+  # Finds and updates the reloader with new apps added in the current directory. So we get hot plug ins by just moving the app script to the current directories.
   def find_scripts
     scripts = @paths.map do |path|
       case
@@ -31,7 +40,7 @@ class Camping::Server
     end.flatten.compact
     @reloader.update(*scripts)
   end
-  
+  # Default Index page. If more than one apps are loaded this page is rendered and it lists all the apps with links to there source.
   def index_page(apps)
     welcome = "You are Camping"
     header = <<-HTML
@@ -94,7 +103,7 @@ class Camping::Server
     rapp = XSendfile.new(rapp)
     rapp = Rack::ShowExceptions.new(rapp)
   end
-  
+#  Returns a Hash of all the apps available in the scripts, where the key would be the name of the app (the one you gave to Camping.goes) and the value would be the app (wrapped inside App).
   def apps
     @reloader.apps.inject({}) do |h, (mount, wrapp)|
       h[mount.to_s.downcase] = wrapp
@@ -105,7 +114,7 @@ class Camping::Server
   def call(env)
     app.call(env)
   end
-  
+  # Starts the camping server with the appropriate serving app.
   def start
     handler, conf = case @conf.server
     when "console"
@@ -125,7 +134,7 @@ class Camping::Server
     
     handler.run(self, conf) 
   end
-  
+  # Reloads the server with new apps added after the server was started.
   def reload!
     find_scripts
     @reloader.reload!
